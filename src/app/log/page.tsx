@@ -10,7 +10,6 @@ type ActivityLog = {
   start_time: string;
   end_time: string;
   notes: string | null;
-  created_at: string;
 };
 
 export default function LogPage() {
@@ -19,49 +18,37 @@ export default function LogPage() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
-  const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  async function fetchActivities() {
-    setIsLoading(true);
-
-    const { data, error } = await supabase
-      .from("activity_logs")
-      .select("*")
-      .order("start_time", { ascending: false });
-
-    if (error) {
-      setMessage(`Error loading activities: ${error.message}`);
-    } else {
-      setActivities(data || []);
-    }
-
-    setIsLoading(false);
-  }
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetchActivities();
+    getTodayActivities();
   }, []);
+
+  async function getTodayActivities() {
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+
+    const { data } = await supabase
+      .from("activity_logs")
+      .select("*")
+      .gte("start_time", startOfDay)
+      .lte("start_time", endOfDay)
+      .order("start_time", { ascending: true });
+
+    setActivities(data || []);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setMessage("");
 
     if (!category || !location || !startTime || !endTime) {
       setMessage("Please fill in all required fields.");
       return;
     }
 
-    if (new Date(endTime) <= new Date(startTime)) {
-      setMessage("End time must be after start time.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const { error } = await supabase.from("activity_logs").insert([
+    await supabase.from("activity_logs").insert([
       {
         category,
         location,
@@ -71,34 +58,24 @@ export default function LogPage() {
       },
     ]);
 
-    if (error) {
-      setMessage(`Error: ${error.message}`);
-    } else {
-      setMessage("Activity logged successfully.");
-      setCategory("");
-      setLocation("");
-      setStartTime("");
-      setEndTime("");
-      setNotes("");
-      await fetchActivities();
-    }
+    setCategory("");
+    setLocation("");
+    setStartTime("");
+    setEndTime("");
+    setNotes("");
+    setMessage("Activity logged successfully.");
 
-    setIsSubmitting(false);
+    getTodayActivities();
   }
 
-  function formatDateTime(value: string) {
-    return new Date(value).toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  function getMinutes(start: string, end: string) {
+    return Math.round(
+      (new Date(end).getTime() - new Date(start).getTime()) / 60000
+    );
   }
 
   function getDuration(start: string, end: string) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const minutes = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+    const minutes = getMinutes(start, end);
 
     if (minutes < 60) {
       return `${minutes} min`;
@@ -107,9 +84,27 @@ export default function LogPage() {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
 
-    return remainingMinutes === 0
-      ? `${hours} hr`
-      : `${hours} hr ${remainingMinutes} min`;
+    if (remainingMinutes === 0) {
+      return `${hours} hr`;
+    }
+
+    return `${hours} hr ${remainingMinutes} min`;
+  }
+
+  function formatTime(value: string) {
+    return new Date(value).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function getCategoryColor(category: string) {
+    if (category === "study") return "border-l-blue-500";
+    if (category === "social") return "border-l-pink-500";
+    if (category === "entertainment") return "border-l-purple-500";
+    if (category === "productivity") return "border-l-green-500";
+    if (category === "travel") return "border-l-yellow-500";
+    return "border-l-gray-500";
   }
 
   return (
@@ -119,7 +114,10 @@ export default function LogPage() {
         Log what you did, where you were, and when it happened.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg border mb-8">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 bg-white p-6 rounded-lg border mb-8"
+      >
         <div>
           <label className="block text-sm font-medium mb-1">Category</label>
           <select
@@ -137,7 +135,9 @@ export default function LogPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Location Name</label>
+          <label className="block text-sm font-medium mb-1">
+            Location Name
+          </label>
           <input
             type="text"
             value={location}
@@ -149,7 +149,9 @@ export default function LogPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Start Time</label>
+            <label className="block text-sm font-medium mb-1">
+              Start Time
+            </label>
             <input
               type="datetime-local"
               value={startTime}
@@ -170,7 +172,9 @@ export default function LogPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+          <label className="block text-sm font-medium mb-1">
+            Notes (Optional)
+          </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -182,45 +186,54 @@ export default function LogPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="bg-black text-white px-4 py-2 rounded-md disabled:opacity-50"
+          className="bg-black text-white px-4 py-2 rounded-md"
         >
-          {isSubmitting ? "Submitting..." : "Log Activity"}
+          Log Activity
         </button>
 
         {message && <p className="text-sm mt-2">{message}</p>}
       </form>
 
       <section>
-        <h2 className="text-xl font-bold mb-4">Saved Activities</h2>
+        <h2 className="text-xl font-bold mb-4">Today&apos;s Activity Timeline</h2>
 
-        {isLoading ? (
-          <p className="text-sm text-gray-600">Loading activities...</p>
-        ) : activities.length === 0 ? (
+        {activities.length === 0 ? (
           <p className="text-sm text-gray-600">
-            No activities logged yet. Add your first activity above.
+            No activities logged today yet.
           </p>
         ) : (
           <div className="space-y-3">
             {activities.map((activity) => (
-              <div key={activity.id} className="bg-white border rounded-lg p-4">
+              <div
+                key={activity.id}
+                className={`bg-white border border-l-4 rounded-lg p-4 ${getCategoryColor(
+                  activity.category
+                )}`}
+              >
                 <div className="flex justify-between gap-4">
                   <div>
-                    <p className="font-semibold capitalize">{activity.category}</p>
-                    <p className="text-sm text-gray-600">{activity.location}</p>
+                    <p className="font-semibold capitalize">
+                      {activity.category}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {activity.location}
+                    </p>
                   </div>
 
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm font-medium">
                     {getDuration(activity.start_time, activity.end_time)}
                   </p>
                 </div>
 
-                <p className="text-sm mt-2">
-                  {formatDateTime(activity.start_time)} - {formatDateTime(activity.end_time)}
+                <p className="text-sm text-gray-600 mt-2">
+                  {formatTime(activity.start_time)} -{" "}
+                  {formatTime(activity.end_time)}
                 </p>
 
                 {activity.notes && (
-                  <p className="text-sm text-gray-700 mt-2">{activity.notes}</p>
+                  <p className="text-sm text-gray-700 mt-2">
+                    {activity.notes}
+                  </p>
                 )}
               </div>
             ))}
