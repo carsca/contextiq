@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 type ActivityLog = {
   id: number;
@@ -14,25 +22,29 @@ type ActivityLog = {
 
 export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
   useEffect(() => {
-    async function getActivities() {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    getActivitiesForDate();
+  }, [selectedDate]);
 
-      const { data } = await supabase
-        .from("activity_logs")
-        .select("*")
-        .gte("start_time", startOfDay)
-        .lte("start_time", endOfDay)
-        .order("start_time", { ascending: true });
+  async function getActivitiesForDate() {
+  const [year, month, day] = selectedDate.split("-").map(Number);
 
-      setActivities(data || []);
-    }
+  const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-    getActivities();
-  }, []);
+  const { data } = await supabase
+    .from("activity_logs")
+    .select("*")
+    .gte("start_time", start.toISOString())
+    .lte("start_time", end.toISOString())
+    .order("start_time", { ascending: true });
+
+  setActivities(data || []);
+}
 
   function getMinutes(start: string, end: string) {
     return Math.round(
@@ -45,97 +57,131 @@ export default function DashboardPage() {
   }, 0);
 
   const categoryTotals: Record<string, number> = {};
+  const locationTotals: Record<string, number> = {};
 
   activities.forEach((activity) => {
+    const minutes = getMinutes(activity.start_time, activity.end_time);
+
     categoryTotals[activity.category] =
-      (categoryTotals[activity.category] || 0) +
-      getMinutes(activity.start_time, activity.end_time);
+      (categoryTotals[activity.category] || 0) + minutes;
+
+    locationTotals[activity.location] =
+      (locationTotals[activity.location] || 0) + minutes;
   });
+
+  const categoryChartData = Object.entries(categoryTotals).map(
+    ([category, minutes]) => ({
+      name: category,
+      hours: Number((minutes / 60).toFixed(2)),
+    })
+  );
+
+  const locationChartData = Object.entries(locationTotals).map(
+    ([location, minutes]) => ({
+      name: location,
+      hours: Number((minutes / 60).toFixed(2)),
+    })
+  );
+
+  const switchCount = activities.length > 0 ? activities.length - 1 : 0;
 
   const topCategory =
     Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ||
     "No data yet";
 
-  const today = new Date().toLocaleDateString([], {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
       <p className="text-sm text-gray-600 mb-6">
-        Today is {today}. Here is your activity summary.
+        Daily summary view based on logged activity data.
       </p>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white border rounded-lg p-5">
-          <p className="text-sm text-gray-600">Total Activities</p>
-          <p className="text-3xl font-bold">
-            {activities.length > 0 ? activities.length : 0}
-          </p>
-        </div>
-
-        <div className="bg-white border rounded-lg p-5">
-          <p className="text-sm text-gray-600">Total Time</p>
-          <p className="text-3xl font-bold">
-            {activities.length > 0
-              ? `${(totalMinutes / 60).toFixed(1)} hrs`
-              : "0 hrs"}
-          </p>
-        </div>
-
-        <div className="bg-white border rounded-lg p-5">
-          <p className="text-sm text-gray-600">Top Category</p>
-          <p className="text-2xl font-bold capitalize">{topCategory}</p>
-        </div>
+      <div className="mb-8">
+        <label className="block text-sm font-medium mb-1">Select Date</label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="border rounded-md p-2 bg-white"
+        />
       </div>
 
-      {/* Category Breakdown */}
       <div className="bg-white border rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4">Category Breakdown</h2>
+        <h2 className="text-xl font-bold mb-4">Daily Summary</h2>
 
-        {activities.length === 0 ? (
-          <p className="text-sm text-gray-600">
-            No activities logged today yet.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {Object.entries(categoryTotals).map(([category, minutes]) => (
-              <div key={category}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="capitalize">{category}</span>
-                  <span>{(minutes / 60).toFixed(1)} hrs</span>
-                </div>
-
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-black h-3 rounded-full"
-                    style={{ width: `${(minutes / totalMinutes) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="border rounded-lg p-5">
+            <p className="text-sm text-gray-600">Activities</p>
+            <p className="text-3xl font-bold">{activities.length}</p>
           </div>
-        )}
+
+          <div className="border rounded-lg p-5">
+            <p className="text-sm text-gray-600">Total Time</p>
+            <p className="text-3xl font-bold">
+              {(totalMinutes / 60).toFixed(1)} hrs
+            </p>
+          </div>
+
+          <div className="border rounded-lg p-5">
+            <p className="text-sm text-gray-600">Switch Count</p>
+            <p className="text-3xl font-bold">{switchCount}</p>
+          </div>
+
+          <div className="border rounded-lg p-5">
+            <p className="text-sm text-gray-600">Top Category</p>
+            <p className="text-2xl font-bold capitalize">{topCategory}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Latest Suggestion */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-2">Latest Suggestion</h2>
+      {activities.length === 0 ? (
+        <div className="bg-white border rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-2">No data for this day</h2>
+          <p className="text-sm text-gray-600">
+            Log an activity for this date to generate a daily summary.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white border rounded-lg p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">Category Breakdown</h2>
 
-        {activities.length === 0 ? (
-          <p className="text-sm text-gray-600">
-            Suggestions will appear after enough activity data is logged.
-          </p>
-        ) : (
-          <p className="text-sm text-gray-600">
-            Suggestions will appear here after the pattern detection system is connected.
-          </p>
-        )}
-      </div>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryChartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="hours" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-lg p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">Location Time</h2>
+
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={locationChartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="hours" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-2">Latest Suggestion</h2>
+            <p className="text-sm text-gray-600">
+              Suggestions will appear here after the pattern detection system is
+              connected.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
