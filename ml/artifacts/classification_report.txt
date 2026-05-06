@@ -1,0 +1,14 @@
+WARNING: Metrics are from synthetic, intentionally separable data.
+
+              precision    recall  f1-score   support
+
+ distraction      1.000     1.000     1.000        80
+    drop_off      1.000     1.000     1.000        80
+        none      1.000     1.000     1.000        80
+     routine      1.000     1.000     1.000        80
+ study_block      1.000     1.000     1.000        80
+
+    accuracy                          1.000       400
+   macro avg      1.000     1.000     1.000       400
+weighted avg      1.000     1.000     1.000       400
+

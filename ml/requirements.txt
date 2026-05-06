@@ -1,0 +1,8 @@
+scikit-learn
+supabase
+pandas
+numpy
+matplotlib
+seaborn
+joblib
+python-dotenv

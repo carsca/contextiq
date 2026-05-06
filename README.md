@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ContextIQ
 
-## Getting Started
+ContextIQ is a Next.js + Supabase demo app for logging daily activity and generating behavior suggestions with a simple ML + LLM pipeline.
 
-First, run the development server:
+## Stack
+
+- Frontend/API: Next.js + TypeScript
+- Data store: Supabase (`activity_logs`, `daily_summaries`, `pattern_findings`, `suggestions`)
+- ML scripts: Python + scikit-learn in `ml/`
+
+## Setup
+
+1. Install app dependencies:
+
+```bash
+npm install
+```
+
+2. Add environment variables in `.env.local`:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (required for server aggregation/suggestions pipeline routes)
+- `OPENAI_API_KEY` (required for LLM suggestion generation)
+
+3. Run SQL migration in Supabase dashboard:
+- `supabase/migrations/20260505_contextiq_pipeline.sql`
+
+4. Start app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## End-to-End Pipeline
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Users log events to `activity_logs` on `/log`.
+2. Dashboard trigger calls `/api/pipeline/aggregate` to upsert `daily_summaries`.
+3. Dashboard trigger calls `/api/pipeline/infer` (runs Python inference script when available) to write `pattern_findings`.
+4. Dashboard trigger calls `/api/suggestions/generate` to create/cached `suggestions` via `gpt-4o-mini`.
+5. `/suggestions` renders database-backed suggestions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pilot Evaluation Flow (Tonight)
 
-## Learn More
+1. Three users log real activities during the day in `/log`.
+2. Run ML setup and training once:
+   - Follow `ml/README.md` setup
+   - `python ml/generate_synthetic_data.py`
+   - `python ml/train_model.py`
+3. For each day to evaluate:
+   - Click **Run pipeline for selected date** on `/dashboard`
+   - If Python cannot be run from API route, run manually:
+     - `python ml/infer_from_supabase.py --date YYYY-MM-DD`
+   - Re-run dashboard pipeline button (or generate suggestion route) to create suggestions
+4. Capture screenshots from `/dashboard` and `/suggestions`.
+5. Compare predicted pattern labels with each participant’s subjective daily self-label.
 
-To learn more about Next.js, take a look at the following resources:
+## Presentation Artifacts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `ml/artifacts/pattern_classifier.joblib`
+- `ml/artifacts/confusion_matrix.png`
+- `ml/artifacts/feature_importances.png`
+- `ml/artifacts/classification_report.txt`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Important Limitation
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The current classifier is trained on synthetic, intentionally separable data to make the demo pipeline dependable by deadline. Accuracy metrics are valid for synthetic evaluation only and should be presented transparently as such.
