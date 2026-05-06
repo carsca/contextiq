@@ -12,6 +12,9 @@ type ActivityLog = {
   notes: string | null;
 };
 
+const fieldClass =
+  "w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/25";
+
 export default function LogPage() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
@@ -99,32 +102,37 @@ export default function LogPage() {
   }
 
   function getCategoryColor(category: string) {
-    if (category === "study") return "border-l-blue-500";
-    if (category === "social") return "border-l-pink-500";
-    if (category === "entertainment") return "border-l-purple-500";
-    if (category === "productivity") return "border-l-green-500";
-    if (category === "travel") return "border-l-yellow-500";
-    return "border-l-gray-500";
+    if (category === "study") return "border-l-cyan-400";
+    if (category === "social") return "border-l-fuchsia-400";
+    if (category === "entertainment") return "border-l-violet-400";
+    if (category === "productivity") return "border-l-emerald-400";
+    if (category === "travel") return "border-l-amber-400";
+    return "border-l-slate-400";
   }
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold mb-2">Activity Log</h1>
-      <p className="text-sm text-gray-600 mb-6">
-        Log what you did, where you were, and when it happened.
-      </p>
+      <header className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-400/90">
+          Capture
+        </p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+          Activity log
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
+          Log what you did, where you were, and when it happened.
+        </p>
+      </header>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-white p-6 rounded-lg border mb-8"
+        className="mb-10 space-y-5 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-xl shadow-black/25 backdrop-blur-sm"
       >
         <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full border rounded-md p-2"
-          >
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
+            Category
+          </label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className={fieldClass}>
             <option value="">Select a category</option>
             <option value="study">Study</option>
             <option value="social">Social</option>
@@ -135,105 +143,108 @@ export default function LogPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Location Name
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
+            Location name
           </label>
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Library, dorm, gym, etc."
-            className="w-full border rounded-md p-2"
+            className={fieldClass}
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Start Time
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
+              Start time
             </label>
             <input
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full border rounded-md p-2"
+              className={fieldClass}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">End Time</label>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
+              End time
+            </label>
             <input
               type="datetime-local"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full border rounded-md p-2"
+              className={fieldClass}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Notes (Optional)
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
+            Notes (optional)
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add any extra details here"
             rows={4}
-            className="w-full border rounded-md p-2"
+            className={fieldClass}
           />
         </div>
 
         <button
           type="submit"
-          className="bg-black text-white px-4 py-2 rounded-md"
+          className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         >
-          Log Activity
+          Log activity
         </button>
 
-        {message && <p className="text-sm mt-2">{message}</p>}
+        {message && (
+          <p
+            className={`text-sm ${message.includes("success") ? "text-emerald-400" : "text-amber-300"}`}
+          >
+            {message}
+          </p>
+        )}
       </form>
 
       <section>
-        <h2 className="text-xl font-bold mb-4">Today&apos;s Activity Timeline</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Today&apos;s activity timeline
+        </h2>
 
         {activities.length === 0 ? (
-          <p className="text-sm text-gray-600">
-            No activities logged today yet.
-          </p>
+          <p className="text-sm text-slate-400">No activities logged today yet.</p>
         ) : (
           <div className="space-y-3">
             {activities.map((activity) => (
               <div
                 key={activity.id}
-                className={`bg-white border border-l-4 rounded-lg p-4 ${getCategoryColor(
+                className={`rounded-2xl border border-white/10 border-l-4 bg-white/[0.05] p-4 shadow-lg shadow-black/20 backdrop-blur-sm ${getCategoryColor(
                   activity.category
                 )}`}
               >
                 <div className="flex justify-between gap-4">
                   <div>
-                    <p className="font-semibold capitalize">
+                    <p className="font-semibold capitalize text-white">
                       {activity.category}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {activity.location}
-                    </p>
+                    <p className="text-sm text-slate-400">{activity.location}</p>
                   </div>
 
-                  <p className="text-sm font-medium">
+                  <p className="shrink-0 text-sm font-medium tabular-nums text-cyan-300/90">
                     {getDuration(activity.start_time, activity.end_time)}
                   </p>
                 </div>
 
-                <p className="text-sm text-gray-600 mt-2">
-                  {formatTime(activity.start_time)} -{" "}
-                  {formatTime(activity.end_time)}
+                <p className="mt-2 text-sm text-slate-500">
+                  {formatTime(activity.start_time)} – {formatTime(activity.end_time)}
                 </p>
 
                 {activity.notes && (
-                  <p className="text-sm text-gray-700 mt-2">
-                    {activity.notes}
-                  </p>
+                  <p className="mt-2 text-sm text-slate-300">{activity.notes}</p>
                 )}
               </div>
             ))}

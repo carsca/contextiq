@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,37 +28,17 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen bg-gray-100">
+      <body className="min-h-screen font-sans antialiased">
         <div className="flex min-h-screen">
-          
-          {/* Sidebar */}
-          <aside className="w-64 bg-white border-r p-6">
-            <h1 className="text-2xl font-bold mb-8">ContextIQ</h1>
+          <Sidebar />
 
-            <nav className="flex flex-col gap-4">
-              <Link href="/dashboard" className="hover:font-semibold">
-                Dashboard
-              </Link>
-
-              <Link href="/log" className="hover:font-semibold">
-                Activity Log
-              </Link>
-
-              <Link href="/suggestions" className="hover:font-semibold">
-                Suggestions
-              </Link>
-
-              <Link href="/settings" className="hover:font-semibold">
-                Settings
-              </Link>
-            </nav>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1 p-8">
-            {children}
+          <main className="relative flex-1 overflow-x-hidden p-6 sm:p-10">
+            <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35]">
+              <div className="absolute right-0 top-0 h-[420px] w-[420px] translate-x-1/4 -translate-y-1/4 rounded-full bg-cyan-500/20 blur-[100px]" />
+              <div className="absolute bottom-0 left-1/3 h-[320px] w-[320px] translate-y-1/3 rounded-full bg-violet-600/15 blur-[90px]" />
+            </div>
+            <div className="mx-auto max-w-6xl">{children}</div>
           </main>
-
         </div>
       </body>
     </html>

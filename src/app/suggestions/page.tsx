@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function SuggestionsPage() {
   const suggestions = [
     {
@@ -28,15 +30,24 @@ export default function SuggestionsPage() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="text-2xl font-bold mb-2">Suggestions</h1>
-      <p className="text-sm text-gray-600 mb-8">
-        Recommendations generated from extracted behavior features and pattern
-        detection results.
-      </p>
+      <header className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-400/90">
+          Guidance
+        </p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+          Suggestions
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+          Recommendations generated from extracted behavior features and pattern
+          detection results.
+        </p>
+      </header>
 
-      <div className="bg-white border rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-bold mb-2">Suggestion Engine Overview</h2>
-        <p className="text-sm text-gray-600">
+      <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-xl shadow-black/25 backdrop-blur-sm">
+        <h2 className="mb-2 text-lg font-semibold text-white">
+          Suggestion engine overview
+        </h2>
+        <p className="text-sm leading-relaxed text-slate-400">
           ContextIQ uses a two-stage pipeline. First, activity logs are converted
           into behavioral features such as session length, category balance,
           activity switching, and routine consistency. Then, the project&apos;s
@@ -47,39 +58,60 @@ export default function SuggestionsPage() {
 
       <div className="space-y-6">
         {suggestions.map((item) => (
-          <div key={item.id} className="bg-white border rounded-lg p-6">
-            <div className="flex justify-between gap-4 mb-4">
+          <article
+            key={item.id}
+            className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-xl shadow-black/25 backdrop-blur-sm"
+          >
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">
-                  Pattern: {item.patternType}
+                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Pattern · {item.patternType}
                 </p>
-                <h2 className="text-xl font-bold">{item.suggestion}</h2>
+                <h2 className="text-xl font-semibold leading-snug text-white">
+                  {item.suggestion}
+                </h2>
               </div>
 
-              <span className="h-fit border rounded-full px-3 py-1 text-sm font-medium">
+              <span
+                className={`h-fit w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  item.confidence === "High"
+                    ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-300"
+                    : "border-amber-400/40 bg-amber-500/10 text-amber-200"
+                }`}
+              >
                 {item.confidence}
               </span>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 border-t border-white/10 pt-4">
               <div>
-                <h3 className="font-semibold mb-1">Why?</h3>
-                <p className="text-sm text-gray-600">{item.explanation}</p>
+                <h3 className="mb-1 text-sm font-semibold text-slate-200">Why?</h3>
+                <p className="text-sm leading-relaxed text-slate-400">{item.explanation}</p>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-1">Evidence Used</h3>
-                <p className="text-sm text-gray-600">{item.evidence}</p>
+                <h3 className="mb-1 text-sm font-semibold text-slate-200">
+                  Evidence used
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-400">{item.evidence}</p>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-1">Limitation</h3>
-                <p className="text-sm text-gray-600">{item.limitation}</p>
+                <h3 className="mb-1 text-sm font-semibold text-slate-200">Limitation</h3>
+                <p className="text-sm leading-relaxed text-slate-400">{item.limitation}</p>
               </div>
             </div>
-          </div>
+          </article>
         ))}
       </div>
+
+      <p className="mt-8 text-center text-sm text-slate-500">
+        Refine inputs on the{" "}
+        <Link href="/log" className="font-medium text-cyan-400 hover:text-cyan-300">
+          activity log
+        </Link>
+        .
+      </p>
     </div>
   );
 }
