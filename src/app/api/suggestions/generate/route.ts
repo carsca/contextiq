@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     }
 
     const prompt = [
-      "You are the ContextIQ suggestion engine for a student productivity demo.",
+      "You are the ContextIQ suggestion engine for student productivity.",
       "Return practical and concise feedback using only the provided finding.",
       "Acknowledge that this system uses logged activity only and can miss context.",
       "",
