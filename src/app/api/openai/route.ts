@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// This function to get OpenAI client
 function getClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -9,6 +10,7 @@ function getClient() {
   return new OpenAI({ apiKey });
 }
 
+// This function will handel the POST requist
 export async function POST(request: Request) {
   try {
     const openai = getClient();
