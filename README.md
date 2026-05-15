@@ -1,66 +1,68 @@
 # ContextIQ
 
-ContextIQ is a Next.js + Supabase demo app for logging daily activity and generating behavior suggestions with a simple ML + LLM pipeline.
+ContextIQ is a Next.js app for logging what you did in a day, seeing a simple summary and charts, and optionally running a pipeline that turns that day into a pattern label and a short AI suggestion.
 
-## Stack
+## Try it live
 
-- Frontend/API: Next.js + TypeScript
-- Data store: Supabase (`activity_logs`, `daily_summaries`, `pattern_findings`, `suggestions`)
-- ML scripts: Python + scikit-learn in `ml/`
+**[https://contextiq-eta.vercel.app/](https://contextiq-eta.vercel.app/)**
 
-## Setup
+The deployed app is already connected to Supabase and OpenAI. Open it in your browser, log some activities, then use the dashboard to run the full pipeline without installing anything.
 
-1. Install app dependencies:
+---
 
-```bash
-npm install
-```
+## How to use the app
 
-2. Add environment variables in `.env.local`:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (required for server aggregation/suggestions pipeline routes)
-- `OPENAI_API_KEY` (required for LLM suggestion generation)
+1. **Activity log** (`/log`) — Pick category, location, start/end time, optional notes, and submit. Your entries show up in a timeline for today.
 
-3. Run SQL migration in Supabase dashboard:
-- `supabase/migrations/20260505_contextiq_pipeline.sql`
+2. **Dashboard** (`/dashboard`) — Choose a calendar date. You’ll see totals, time by category and location, and a **Run pipeline for selected date** button. That button runs aggregation, then pattern inference (Python when available), then suggestion generation. After it finishes, you’ll see the latest pattern and suggestion for that date when they exist.
 
-4. Start app:
+3. **Suggestions** (`/suggestions`) — Browse all generated suggestions and the pattern info they came from.
 
-```bash
-npm run dev
-```
+4. **Home** (`/`) — Short intro and links into the app.
 
-## End-to-End Pipeline
+5. **Settings** (`/settings`) — Placeholder for future options.
 
-1. Users log events to `activity_logs` on `/log`.
-2. Dashboard trigger calls `/api/pipeline/aggregate` to upsert `daily_summaries`.
-3. Dashboard trigger calls `/api/pipeline/infer` (runs Python inference script when available) to write `pattern_findings`.
-4. Dashboard trigger calls `/api/suggestions/generate` to create/cached `suggestions` via `gpt-4o-mini`.
-5. `/suggestions` renders database-backed suggestions.
+If **Run pipeline** can’t run the Python inference step on your machine or host, run inference from your machine with:
 
-## Pilot Evaluation Flow (Tonight)
+`python ml/infer_from_supabase.py --date YYYY-MM-DD`
 
-1. Three users log real activities during the day in `/log`.
-2. Run ML setup and training once:
-   - Follow `ml/README.md` setup
-   - `python ml/generate_synthetic_data.py`
-   - `python ml/train_model.py`
-3. For each day to evaluate:
-   - Click **Run pipeline for selected date** on `/dashboard`
-   - If Python cannot be run from API route, run manually:
-     - `python ml/infer_from_supabase.py --date YYYY-MM-DD`
-   - Re-run dashboard pipeline button (or generate suggestion route) to create suggestions
-4. Capture screenshots from `/dashboard` and `/suggestions`.
-5. Compare predicted pattern labels with each participant’s subjective daily self-label.
+(see **`ml/README.md`** for Python setup), then run the pipeline again from the dashboard or rely on the suggestion step once a finding exists.
 
-## Presentation Artifacts
+---
 
-- `ml/artifacts/pattern_classifier.joblib`
-- `ml/artifacts/confusion_matrix.png`
-- `ml/artifacts/feature_importances.png`
-- `ml/artifacts/classification_report.txt`
+## Run the code locally
 
-## Important Limitation
+**You need:** Node.js (LTS), npm, and the Supabase + OpenAI credentials the deployed app uses.
 
-The current classifier is trained on synthetic, intentionally separable data to make the demo pipeline dependable by deadline. Accuracy metrics are valid for synthetic evaluation only and should be presented transparently as such.
+1. Clone the repo and open a terminal in the project root.
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Add a **`.env.local`** file with:
+
+NEXT_PUBLIC_SUPABASE_URL=https://jxpocutuhwsfgmsayloy.supabase.co/rest/v1/
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4cG9jdXR1aHdzZmdtc2F5bG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU3ODgsImV4cCI6MjA5MjM2MTc4OH0.qYkgY_ZKpAMUY6Ttr9FWb4BFDpvqdSYkO196FzaQPR4
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4cG9jdXR1aHdzZmdtc2F5bG95Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njc4NTc4OCwiZXhwIjoyMDkyMzYxNzg4fQ.PQoMJJalugJW1GNYqPSA2hAXE1ASJdw3ZbpOITJrLmY
+
+   You can optionally set `SUPABASE_URL`; otherwise the server uses `NEXT_PUBLIC_SUPABASE_URL`.
+
+4. Start the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Open **http://localhost:3000** and use the app the same way as on Vercel.
+
+
+**ML (training and offline inference):** see **`ml/README.md`**.
+---
+## Quick reference
+| What you want | Where to go |
+|---------------|-------------|
+| Use the hosted app | [contextiq-eta.vercel.app](https://contextiq-eta.vercel.app/) |
+| Hack on the Next.js app | Clone repo → `.env.local` → `npm install` → `npm run dev` |
